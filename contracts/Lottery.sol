@@ -12,28 +12,41 @@ contract Lottery {
     // declaring the constructor
     constructor() {
         // TODO: initialize the owner to the address that deploys the contract
+        owner = msg.sender;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "ONLY_OWNER");
+        _;
     }
 
     // declaring the receive() function that is necessary to receive ETH
     receive() external payable {
         // TODO: require each player to send exactly 0.1 ETH
+        require(msg.value == 0.1 ether);
         // TODO: append the new player to the players array
+        players.push(msg.sender);
     }
 
     // returning the contract's balance in wei
-    function getBalance() public view returns (uint256) {
+    function getBalance() public view onlyOwner returns (uint256) {
         // TODO: restrict this function so only the owner is allowed to call it
         // TODO: return the balance of this address
+        return address(this).balance;
     }
 
     // selecting the winner
-    function pickWinner() public {
+    function pickWinner() public onlyOwner {
         // TODO: only the owner can pick a winner 
         // TODO: owner can only pick a winner if there are at least 3 players in the lottery
-
-        uint256 r = random();
-        address winner;
-
+        uint256 totalPlayer = players.length;
+        require(totalPlayer >= 3, "NOT_ENOUGH_PLAYERS");
+        uint256 r = random() % totalPlayer;
+        address winner = players[r];
+        gameWinners.push(winner);
+        delete players;
+        (bool success,) = winner.call{value:address(this).balance}("");
+        require(success);
         // TODO: compute an unsafe random index of the array and assign it to the winner variable 
 
         // TODO: append the winner to the gameWinners array
